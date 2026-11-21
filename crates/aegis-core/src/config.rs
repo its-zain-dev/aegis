@@ -374,15 +374,24 @@ impl AegisConfig {
 }
 
 pub fn default_data_dir() -> PathBuf {
-    dirs::data_local_dir()
-        .unwrap_or_else(|| PathBuf::from(".aegis"))
-        .join("aegis")
+    if let Some(dir) = dirs::data_local_dir() {
+        return dir.join("aegis");
+    }
+    if let Some(xdg) = std::env::var_os("XDG_DATA_HOME").filter(|v| !v.is_empty()) {
+        return PathBuf::from(xdg).join("aegis");
+    }
+    if let Some(home) = dirs::home_dir().or_else(|| std::env::var_os("HOME").map(PathBuf::from)) {
+        return home.join(".local").join("share").join("aegis");
+    }
+    PathBuf::from(".aegis").join("aegis")
 }
 
 pub fn expand_tilde(path: &Path) -> PathBuf {
     if let Some(s) = path.to_str() {
         if let Some(rest) = s.strip_prefix("~/") {
-            if let Some(home) = dirs::home_dir() {
+            if let Some(home) =
+                dirs::home_dir().or_else(|| std::env::var_os("HOME").map(PathBuf::from))
+            {
                 return home.join(rest);
             }
         }
