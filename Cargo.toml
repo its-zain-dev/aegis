@@ -14,7 +14,7 @@ members = [
 [workspace.package]
 version = "0.9.0"
 edition = "2021"
-rust-version = "1.78"
+rust-version = "1.87"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/its-zain-dev/aegis"
 homepage = "https://github.com/its-zain-dev/aegis"

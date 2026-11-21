@@ -293,5 +293,5 @@ pub fn is_valid_luhn(candidate: &str) -> bool {
         sum += v;
         double = !double;
     }
-    sum % 10 == 0
+    sum.is_multiple_of(10)
 }
