@@ -68,6 +68,7 @@ impl TraceWal {
             .create(true)
             .read(true)
             .write(true)
+            .truncate(false)
             .open(&path)?;
 
         let len = file.metadata()?.len();

@@ -255,7 +255,7 @@ impl PatternMatcher {
             return Vec::new();
         };
         let mut seen = vec![false; self.prefixed_rules.len()];
-        for mat in ac.find_iter(input) {
+        for mat in ac.find_overlapping_iter(input) {
             let rule_idx = self.trigger_to_rule[mat.pattern().as_usize()];
             seen[rule_idx] = true;
         }

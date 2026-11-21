@@ -17,7 +17,6 @@ edition = "2021"
 rust-version = "1.87"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/its-zain-dev/aegis"
-homepage = "https://github.com/its-zain-dev/aegis"
 description = "Single-binary Rust AI Agent Gateway & MCP Firewall"
 keywords = ["mcp", "ai", "gateway", "firewall", "security"]
 categories = ["command-line-utilities", "network-programming", "development-tools"]
