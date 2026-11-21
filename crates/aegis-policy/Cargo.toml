@@ -1,0 +1,9 @@
+[package]
+name = "aegis-policy"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Ultra-fast lightweight tool-level allowlist/denylist policy engine for Aegis"
+
+[dependencies]
+aegis-core.workspace = true

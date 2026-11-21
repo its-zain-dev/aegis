@@ -1,0 +1,114 @@
+# Aegis v0.9.0 Configuration Example
+# Connects Antigravity CLI (or any MCP client) to multiple upstream MCP servers
+# with tool-level allow/deny firewalling, streaming secret redaction,
+# pure-Rust WAL tracing, BLAKE3 caching, and live TUI telemetry.
+
+[gateway]
+name = "aegis"
+namespace_separator = "__"
+request_timeout_secs = 60
+# Hide denied tools from tools/list responses (recommended)
+hide_denied_tools = true
+
+[ipc]
+# Enables `aegis tui` and `aegis status` to attach live to stdio or HTTP mode.
+# Leave path empty to use platform default:
+#   Unix/Android/macOS: $XDG_RUNTIME_DIR/aegis.sock (or /tmp/aegis-<uid>.sock)
+#   Windows:            127.0.0.1:17420 (or auto-discovered port file)
+enabled = true
+# path = "/tmp/aegis.sock"
+# tcp_addr = "127.0.0.1:17420"
+
+[policy]
+# Global default stance: "allow" or "deny"
+default = "allow"
+# Global tool allowlist/denylist (matches namespaced names like "github__delete_repo")
+allow = []
+deny = [
+    "*__delete_*",
+    "*__drop_*",
+    "*__force_push*",
+]
+
+# Optional named profiles (select via `aegis serve --profile readonly`)
+[profiles.readonly]
+default = "deny"
+allow = [
+    "*__get_*",
+    "*__list_*",
+    "*__read_*",
+    "*__search_*",
+    "*__describe_*",
+]
+deny = []
+
+[redaction]
+enabled = true
+# Also scan tool input arguments (off by default to avoid breaking valid tool calls)
+redact_inputs = false
+# Scan all tool outputs before returning to the agent/LLM
+redact_outputs = true
+# Built-in secret detectors (GitHub, AWS, OpenAI/Anthropic, Slack, Stripe, Google, JWT, PEM, DB URLs, Bearer)
+enable_builtin_patterns = true
+# Shannon-entropy scanner for unknown high-entropy secrets
+enable_entropy = true
+entropy_threshold = 4.5
+entropy_min_length = 20
+# Optional PII redaction (emails, credit cards)
+enable_pii = false
+# Custom regex patterns: name -> regex
+[redaction.custom_patterns]
+# internal_token = "MYCO_[A-Za-z0-9]{32}"
+
+[cache]
+enabled = true
+# Directory for BLAKE3 content-addressed disk cache (empty = default data dir)
+# dir = "~/.local/share/aegis/cache"
+default_ttl_secs = 300
+max_entries = 4096
+# Glob patterns of tools eligible for caching (safe, read-only tools)
+allow = [
+    "*__get_*",
+    "*__list_*",
+    "*__read_*",
+    "*__search_*",
+]
+deny = []
+
+[trace]
+enabled = true
+# Path to append-only pure-Rust binary WAL file (empty = default data dir)
+# path = "~/.local/share/aegis/traces/session.wal"
+# Store full request arguments & response payloads in the WAL (required for deterministic replay)
+capture_payloads = true
+# Compress WAL frames using pure-Rust LZ4
+compress = true
+
+# =============================================================================
+# Upstream MCP Servers (Stdio, Streamable HTTP, and Legacy SSE bridge)
+# =============================================================================
+
+[servers.github]
+transport = "http"
+url = "https://api.githubcopilot.com/mcp/"
+# Supports ${ENV_VAR} expansion at runtime
+headers = { Authorization = "Bearer ${GITHUB_TOKEN}" }
+lazy = true
+enabled = true
+# Optional per-server policy override
+[servers.github.policy]
+deny = ["delete_repository", "merge_pull_request"]
+
+[servers.filesystem]
+transport = "stdio"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-filesystem", "."]
+lazy = true
+enabled = false
+
+[servers.legacy_example]
+# Automatically bridges legacy MCP 2024-11-05 HTTP+SSE servers to Antigravity!
+transport = "sse"
+url = "http://127.0.0.1:9001/sse"
+lazy = true
+enabled = false

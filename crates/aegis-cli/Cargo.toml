@@ -1,0 +1,32 @@
+[package]
+name = "aegis-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+description.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[[bin]]
+name = "aegis"
+path = "src/main.rs"
+
+[dependencies]
+aegis-core.workspace = true
+aegis-mux.workspace = true
+aegis-policy.workspace = true
+aegis-redact.workspace = true
+aegis-store.workspace = true
+aegis-transport.workspace = true
+aegis-tui.workspace = true
+anyhow.workspace = true
+async-trait.workspace = true
+chrono.workspace = true
+clap.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
