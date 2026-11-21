@@ -100,7 +100,7 @@ pub struct GatewayStats {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "snake_case")]
+#[serde(tag = "type", content = "data", rename_all = "snake_case")]
 pub enum TelemetryEvent {
     ToolCall(ToolCallEvent),
     ServerStatus(ServerHealth),
@@ -120,7 +120,7 @@ pub enum IpcRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "snake_case")]
+#[serde(tag = "type", content = "data", rename_all = "snake_case")]
 pub enum IpcResponse {
     Pong,
     Ack { message: String },
@@ -128,4 +128,96 @@ pub enum IpcResponse {
     Servers(Vec<ServerHealth>),
     Event(TelemetryEvent),
     Error { message: String },
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn roundtrips_ipc_messages_including_servers_and_nested_events() {
+        let reqs = [
+            IpcRequest::Ping,
+            IpcRequest::Subscribe,
+            IpcRequest::GetStats,
+            IpcRequest::GetServers,
+            IpcRequest::Reload,
+            IpcRequest::ClearCache,
+        ];
+        for req in reqs {
+            let s = serde_json::to_string(&req).unwrap();
+            let _: IpcRequest = serde_json::from_str(&s).unwrap();
+        }
+
+        let health = ServerHealth {
+            name: "github".into(),
+            transport: TransportKind::Stdio,
+            state: ServerState::Ready,
+            tool_count: 2,
+            total_calls: 5,
+            error_count: 0,
+            restart_count: 0,
+            last_error: None,
+        };
+
+        let stats = GatewayStats {
+            started_at: Utc::now(),
+            mode: "http://127.0.0.1:7420/mcp".into(),
+            uptime_secs: 42,
+            total_calls: 5,
+            allowed_calls: 3,
+            denied_calls: 1,
+            error_calls: 0,
+            cache_hits: 1,
+            cache_misses: 3,
+            total_redactions: 2,
+            redactions_by_category: BTreeMap::new(),
+            avg_latency_ms: 12.5,
+            p95_latency_ms: 25,
+            active_servers: 1,
+            total_tools: 2,
+        };
+
+        let call_event = ToolCallEvent {
+            id: "req-1".into(),
+            timestamp: Utc::now(),
+            server: "github".into(),
+            tool: "list_issues".into(),
+            namespaced_tool: "github__list_issues".into(),
+            outcome: CallOutcome::Cached,
+            duration_ms: 1,
+            cache_hit: true,
+            redaction_count: 0,
+            redaction_categories: BTreeMap::new(),
+            error_message: None,
+            args_preview: Some("{}".into()),
+            result_preview: Some("ok".into()),
+        };
+
+        let responses = [
+            IpcResponse::Pong,
+            IpcResponse::Ack {
+                message: "ok".into(),
+            },
+            IpcResponse::Stats(stats.clone()),
+            IpcResponse::Servers(vec![health.clone()]),
+            IpcResponse::Event(TelemetryEvent::ToolCall(call_event)),
+            IpcResponse::Event(TelemetryEvent::ServerStatus(health)),
+            IpcResponse::Event(TelemetryEvent::Stats(stats)),
+            IpcResponse::Event(TelemetryEvent::Notice {
+                level: "info".into(),
+                message: "reloaded".into(),
+            }),
+            IpcResponse::Error {
+                message: "boom".into(),
+            },
+        ];
+
+        for resp in responses {
+            let s = serde_json::to_string(&resp).unwrap();
+            let decoded: IpcResponse = serde_json::from_str(&s).unwrap();
+            let s2 = serde_json::to_string(&decoded).unwrap();
+            assert_eq!(s, s2);
+        }
+    }
 }

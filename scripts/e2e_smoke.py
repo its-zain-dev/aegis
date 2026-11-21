@@ -84,8 +84,13 @@ def run_cmd(args, input_text=None):
         input=input_text,
         text=True,
         capture_output=True,
-        check=True,
     )
+    if res.returncode != 0:
+        raise RuntimeError(
+            f"Command {args} failed with exit code {res.returncode}\n"
+            f"--- stdout ---\n{res.stdout}\n"
+            f"--- stderr ---\n{res.stderr}"
+        )
     return res.stdout, res.stderr
 
 

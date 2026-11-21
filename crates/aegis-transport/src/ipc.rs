@@ -272,7 +272,7 @@ async fn write_ipc_response<W: AsyncWrite + Unpin>(
     writer: &mut W,
     resp: &IpcResponse,
 ) -> std::io::Result<()> {
-    let json = serde_json::to_string(resp).unwrap_or_else(|_| "{}".to_string());
+    let json = serde_json::to_string(resp).map_err(std::io::Error::other)?;
     writer.write_all(json.as_bytes()).await?;
     writer.write_all(b"\n").await?;
     writer.flush().await
